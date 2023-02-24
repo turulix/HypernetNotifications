@@ -81,7 +81,7 @@ Task.Run(async () => {
         {
             var tokens = await tokensCollection.FindAsync(FilterDefinition<OAuthTokens>.Empty);
             await tokens.ForEachAsync(async authTokens => {
-                if (authTokens.ExpiresOn.AddSeconds(-10) < DateTime.UtcNow)
+                if (authTokens.ExpiresOn < DateTime.UtcNow.AddSeconds(10))
                 {
                     app.Logger.LogInformation("Refreshing Tokens");
                     var newTokens = await esiClient.SSO.GetToken(GrantType.RefreshToken, authTokens.RefreshToken);
@@ -238,7 +238,14 @@ Task.Run(async () => {
         catch (Exception e)
         {
             app.Logger.LogError(e, "Error while processing notifications");
-            await discordClient.SendMessageAsync($"Error accured while processing notifications, {e}");
+            try
+            {
+                await discordClient.SendMessageAsync($"Error accured while processing notifications, {e}");
+            }
+            catch (Exception exception)
+            {
+                app.Logger.LogError(exception, "Error while sending error message");
+            }
         }
 
         await Task.Delay(300 * 1000);
