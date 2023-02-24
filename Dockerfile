@@ -7,6 +7,8 @@ RUN dotnet dotnet build -c Release -o /app /src/EveHypernetNotification
 
 FROM mcr.microsoft.com/dotnet/aspnet:7.0
 
+EXPOSE 3000
+
 COPY --from=builder /app /app
 
 ENTRYPOINT ["dotnet", "/app/EveHypernetNotification.dll"]
