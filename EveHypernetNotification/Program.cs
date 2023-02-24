@@ -83,6 +83,7 @@ Task.Run(async () => {
             await tokens.ForEachAsync(async authTokens => {
                 if (authTokens.ExpiresOn.AddSeconds(-10) < DateTime.UtcNow)
                 {
+                    app.Logger.LogInformation("Refreshing Tokens");
                     var newTokens = await esiClient.SSO.GetToken(GrantType.RefreshToken, authTokens.RefreshToken);
                     authTokens.AccessToken = newTokens.AccessToken;
                     authTokens.RefreshToken = newTokens.RefreshToken;
