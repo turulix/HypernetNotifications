@@ -35,9 +35,10 @@ public static class Utils
             embeds: new[]
             {
                 new EmbedBuilder()
-                    .WithTitle("Hypernet Auction Status Changed")
+                    .WithTitle($"Hypernet Auction {auction.Status}")
                     .WithDescription(
-                        $"Hypernet Auction changed status to {auction.Status}")
+                        $"Hypernet Auction changed status to {auction.Status}"
+                    )
                     .WithThumbnailUrl($"https://images.evetech.net/types/{itemType.TypeId}/icon")
                     .WithColor(auction.Status switch
                     {
@@ -55,25 +56,25 @@ public static class Utils
                         FormatBigNumber(auction.TotalPrice * 0.95f), true)
                     .AddField("Estimated Profit (Win)",
                         FormatBigNumber(auction.TotalPrice / 2f -
-                        auction.TotalPrice * 0.05f -
-                        EstimateCoresNeeded(
-                            auction.HypercoreBuyorderPrice,
-                            auction.HypercoreSellorderPrice,
-                            auction.TotalPrice
-                        ) *
-                        auction.HypercoreSellorderPrice),
+                                        auction.TotalPrice * 0.05f -
+                                        EstimateCoresNeeded(
+                                            auction.HypercoreBuyorderPrice,
+                                            auction.HypercoreSellorderPrice,
+                                            auction.TotalPrice
+                                        ) *
+                                        auction.HypercoreSellorderPrice),
                         true
                     )
                     .AddField("Estimated Profit (Loss)",
                         FormatBigNumber(-auction.ItemSellorderPrice +
-                        auction.TotalPrice / 2f -
-                        auction.TotalPrice * 0.05f -
-                        EstimateCoresNeeded(
-                            auction.HypercoreBuyorderPrice,
-                            auction.HypercoreSellorderPrice,
-                            auction.TotalPrice
-                        ) *
-                        auction.HypercoreSellorderPrice),
+                                        auction.TotalPrice / 2f -
+                                        auction.TotalPrice * 0.05f -
+                                        EstimateCoresNeeded(
+                                            auction.HypercoreBuyorderPrice,
+                                            auction.HypercoreSellorderPrice,
+                                            auction.TotalPrice
+                                        ) *
+                                        auction.HypercoreSellorderPrice),
                         true
                     )
                     .Build()
