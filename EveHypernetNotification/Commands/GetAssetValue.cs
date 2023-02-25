@@ -53,11 +53,20 @@ public class GetAssetValue : InteractionModuleBase<SocketInteractionContext>
             nameMap.Add(keyValuePair.Key, type.Name);
         }
 
+        var map = pricePerItem.Select((x) => new { Name = nameMap[x.Key], Price = x.Value, Count = itemCount[x.Key] }).ToList();
+
+        var sortedNames = map.Select(arg => arg.Name).ToList();
+        sortedNames.Sort();
+
+        var prices = sortedNames.Select(s => {
+            var item = map.First(arg => arg.Name == s);
+            return $"{item.Count} x {item.Name}: {Utils.FormatBigNumber(item.Price)}";
+        });
+
         await RespondAsync(
             embed: new EmbedBuilder()
                 .WithTitle("Total Value of Hypernet Auctions")
-                .WithDescription(string.Join("\n",
-                    pricePerItem.Select(x => $"{itemCount[x.Key]} x {nameMap[x.Key]}: {Utils.FormatBigNumber(x.Value)}")))
+                .WithDescription(string.Join("\n", prices))
                 .AddField("Total Value", $"{Utils.FormatBigNumber(pricePerItem.Values.Sum())}")
                 .WithColor(Color.Green)
                 .Build(),

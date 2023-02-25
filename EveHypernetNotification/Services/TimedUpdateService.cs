@@ -76,6 +76,7 @@ public class TimedUpdateService
                 {
                     hyperNetAuction.ItemBuyorderPrice = await authedClient.GetMaxBuyOrderPriceAsync(hyperNetAuction.TypeId);
                     hyperNetAuction.ItemSellorderPrice = await authedClient.GetMinSellOrderPriceAsync(hyperNetAuction.TypeId);
+                    hyperNetAuction.FirstAppeared = DateTime.UtcNow;
                 }
 
                 if (newAuctions.Count > 0)

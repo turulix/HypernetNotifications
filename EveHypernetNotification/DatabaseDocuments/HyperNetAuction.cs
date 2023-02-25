@@ -39,6 +39,8 @@ public class HyperNetAuction
 
     [BsonRepresentation(BsonType.String)]
     public AuctionResult? Result { get; set; }
+    
+    public DateTime FirstAppeared { get; set; } = DateTime.UtcNow;
 
     public static HyperNetAuction FromDictionary(Dictionary<string, string> dictionary,
         HyperNetAuctionStatus status,
