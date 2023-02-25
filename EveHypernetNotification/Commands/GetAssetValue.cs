@@ -60,7 +60,8 @@ public class GetAssetValue : InteractionModuleBase<SocketInteractionContext>
                     pricePerItem.Select(x => $"{itemCount[x.Key]} x {nameMap[x.Key]}: {Utils.FormatBigNumber(x.Value)}")))
                 .AddField("Total Value", $"{Utils.FormatBigNumber(pricePerItem.Values.Sum())}")
                 .WithColor(Color.Green)
-                .Build()
+                .Build(),
+            ephemeral: true
         );
     }
 

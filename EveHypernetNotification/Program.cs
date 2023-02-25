@@ -68,7 +68,7 @@ namespace EveHypernetNotification
 #if DEBUG
                 await interactionService.RegisterCommandsToGuildAsync(1002206872096473138);
 #else
-            await interactionService.RegisterCommandsGloballyAsync();
+                await interactionService.RegisterCommandsGloballyAsync();
 #endif
 
                 await discordClient.SetGameAsync("HyperNet Auctions");
