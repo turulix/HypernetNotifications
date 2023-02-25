@@ -11,6 +11,12 @@ public enum HyperNetAuctionStatus
     Finished
 }
 
+public enum AuctionResult
+{
+    Won,
+    Loss
+}
+
 [BsonIgnoreExtraElements]
 public class HyperNetAuction
 {
@@ -30,6 +36,9 @@ public class HyperNetAuction
     public float ItemBuyorderPrice { get; set; }
     public float ItemSellorderPrice { get; set; }
     public float TotalPrice => TicketCount * TicketPrice;
+
+    [BsonRepresentation(BsonType.String)]
+    public AuctionResult? Result { get; set; }
 
     public static HyperNetAuction FromDictionary(Dictionary<string, string> dictionary,
         HyperNetAuctionStatus status,

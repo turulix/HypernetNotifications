@@ -1,6 +1,6 @@
 ﻿using MongoDB.Bson.Serialization.Attributes;
 
-namespace EveHypernetNotification;
+namespace EveHypernetNotification.DatabaseDocuments;
 
 [BsonIgnoreExtraElements]
 public class OAuthTokens
@@ -12,5 +12,8 @@ public class OAuthTokens
     public DateTime ExpiresOn { get; set; }
     public string TokenType { get; set; }
     public string CharacterName { get; set; }
+
+    public ulong GuildId { get; set; }
+    public ulong ChannelId { get; set; }
 
 }
