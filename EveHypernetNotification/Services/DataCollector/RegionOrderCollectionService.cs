@@ -73,6 +73,7 @@ public class RegionOrderCollectionService : TimedService
         }
 
         await Task.WhenAll(insertTasks);
+        insertTasks.Clear();
         App.Logger.LogInformation("Finished collecting region order data, took {time}s", (DateTime.UtcNow - fetchTime).TotalSeconds);
     }
 }
