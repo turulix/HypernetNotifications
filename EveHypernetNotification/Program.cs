@@ -81,7 +81,8 @@ namespace EveHypernetNotification
                 await discordClient.SetGameAsync("HyperNet Auctions");
                 Services.GetService<HypernetCollectionService>()!.Start();
                 Services.GetService<TransactionCollectionService>()!.Start();
-                Services.GetService<RegionOrderCollectionService>()!.Start();
+                // Disabled for now.
+                //Services.GetService<RegionOrderCollectionService>()!.Start();
                 Services.GetService<PersonalOrderCollectionService>()!.Start();
                 Services.GetService<PriceCollectionService>()!.Start();
                 Services.GetService<PersonalOrderHistoryCollectionService>()!.Start();
