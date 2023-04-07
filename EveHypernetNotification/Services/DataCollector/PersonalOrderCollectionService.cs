@@ -43,12 +43,13 @@ public class PersonalOrderCollectionService : TimedService
                                 .SetOnInsert(orderDocument => orderDocument.RegionId, document.RegionId)
                                 .SetOnInsert(orderDocument => orderDocument.TypeId, document.TypeId)
                                 .SetOnInsert(orderDocument => orderDocument.VolumeTotal, document.VolumeTotal)
-                                .SetOnInsert(orderDocument => orderDocument.Issued, document.Issued)
                                 .SetOnInsert(orderDocument => orderDocument.Range, document.Range)
                                 .SetOnInsert(orderDocument => orderDocument.CharacterId, document.CharacterId)
                                 .SetOnInsert(orderDocument => orderDocument.IsActive, true)
                                 .SetOnInsert(orderDocument => orderDocument.IsCorporation, document.IsCorporation)
                                 .Push(orderDocument => orderDocument.OrderDetails, document.OrderDetails.Last())
+                                .Set(orderDocument => orderDocument.Issued, document.Issued)
+                            
                         )
                         {
                             IsUpsert = true

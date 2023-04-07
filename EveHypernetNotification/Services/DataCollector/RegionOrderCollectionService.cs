@@ -54,10 +54,10 @@ public class RegionOrderCollectionService : TimedService
                                         .SetOnInsert(orderDocument => orderDocument.SystemId, document.SystemId)
                                         .SetOnInsert(orderDocument => orderDocument.TypeId, document.TypeId)
                                         .SetOnInsert(orderDocument => orderDocument.VolumeTotal, document.VolumeTotal)
-                                        .SetOnInsert(orderDocument => orderDocument.Issued, document.Issued)
                                         .SetOnInsert(orderDocument => orderDocument.Range, document.Range)
                                         .SetOnInsert(orderDocument => orderDocument.IsActive, true)
                                         .Push(orderDocument => orderDocument.OrderDetails, document.OrderDetails.Last())
+                                        .Set(orderDocument => orderDocument.Issued, document.Issued)
                                 )
                                 {
                                     IsUpsert = true
