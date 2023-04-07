@@ -42,9 +42,6 @@ public class HypernetCollectionService
         {
             var tokens = await _db.TokensCollection.FindAsync(FilterDefinition<OAuthTokensDocument>.Empty);
             await tokens.ForEachAsync(async authTokens => {
-                _app.Logger.LogInformation(
-                    "Checking hypernet auctions for {AuthTokensCharacterName}", authTokens.CharacterName
-                );
 
                 authTokens = await _esiClient.EnsureTokenValid(authTokens);
                 var authedClient = _esiClient.GetClient(await _esiClient.Verify(authTokens));
@@ -86,8 +83,7 @@ public class HypernetCollectionService
                             await SendMessage(authTokens, hyperNetAuction, authedClient);
                         }
                     }
-
-                    _app.Logger.LogInformation("Inserted {} new auctions", newAuctions.Count);
+                    
                     await _db.HypernetAuctionCollection.InsertManyAsync(newAuctions);
                 }
 
@@ -115,8 +111,7 @@ public class HypernetCollectionService
                         auction => auction.RaffleId == hyperNetAuction.RaffleId, hyperNetAuction
                     );
                 }
-
-                _app.Logger.LogInformation("Updated status of {} auctions", changedAuctions.Count);
+                
                 foreach (var auction in changedAuctions)
                 {
                     await SendMessage(authTokens, auction, authedClient);

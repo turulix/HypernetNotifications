@@ -2,6 +2,7 @@
 using ESI.NET;
 using EveHypernetNotification.DatabaseDocuments.Market;
 using EveHypernetNotification.Services.Base;
+using MongoDB.Driver;
 
 namespace EveHypernetNotification.Services.DataCollector;
 
@@ -19,10 +20,11 @@ public class RegionOrderCollectionService : TimedService
 
     protected override async Task OnTimerElapsed()
     {
-        App.Logger.LogInformation("Collecting region order data");
+        App.Logger.LogInformation("Collecting RegionOrder Data");
         var esi = _esiService.GetClient();
         var regions = await esi.Universe.Regions();
         var fetchTime = DateTime.UtcNow;
+        var insertTasks = new List<Task>();
         if (regions.StatusCode == HttpStatusCode.OK)
         {
             foreach (var regionId in regions.Data)
@@ -36,8 +38,30 @@ public class RegionOrderCollectionService : TimedService
                     {
                         if (orders.Data.Count > 0)
                         {
-                            await _dbService.RegionOrderCollection.InsertManyAsync(orders.Data.Select(order =>
-                                new RegionOrderDocument(order, regionId, fetchTime)));
+                            var documents = orders.Data.Select(order => new RegionOrderDocument(order, regionId, fetchTime));
+                            var writes = documents.Select(document => {
+                                var writeModel = new UpdateManyModel<RegionOrderDocument>(
+                                    Builders<RegionOrderDocument>.Filter.Where(orderDocument => orderDocument.OrderId == document.OrderId),
+                                    Builders<RegionOrderDocument>.Update
+                                        .SetOnInsert(orderDocument => orderDocument.OrderId, document.OrderId)
+                                        .SetOnInsert(orderDocument => orderDocument.IsBuyOrder, document.IsBuyOrder)
+                                        .SetOnInsert(orderDocument => orderDocument.LocationId, document.LocationId)
+                                        .SetOnInsert(orderDocument => orderDocument.MinVolume, document.MinVolume)
+                                        .SetOnInsert(orderDocument => orderDocument.Duration, document.Duration)
+                                        .SetOnInsert(orderDocument => orderDocument.RegionId, document.RegionId)
+                                        .SetOnInsert(orderDocument => orderDocument.SystemId, document.SystemId)
+                                        .SetOnInsert(orderDocument => orderDocument.TypeId, document.TypeId)
+                                        .SetOnInsert(orderDocument => orderDocument.VolumeTotal, document.VolumeTotal)
+                                        .SetOnInsert(orderDocument => orderDocument.Issued, document.Issued)
+                                        .SetOnInsert(orderDocument => orderDocument.Range, document.Range)
+                                        .Push(orderDocument => orderDocument.OrderDetails, document.OrderDetails.Last())
+                                )
+                                {
+                                    IsUpsert = true
+                                };
+                                return writeModel;
+                            });
+                            insertTasks.Add(_dbService.RegionOrderCollection.BulkWriteAsync(writes));
                         }
                     }
                     else
@@ -47,5 +71,8 @@ public class RegionOrderCollectionService : TimedService
                 }
             }
         }
+
+        await Task.WhenAll(insertTasks);
+        App.Logger.LogInformation("Finished collecting region order data, took {time}s", (DateTime.UtcNow - fetchTime).TotalSeconds);
     }
 }

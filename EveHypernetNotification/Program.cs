@@ -55,6 +55,9 @@ namespace EveHypernetNotification
                 .AddSingleton<HypernetCollectionService>()
                 .AddSingleton<TransactionCollectionService>()
                 .AddSingleton<RegionOrderCollectionService>()
+                .AddSingleton<PersonalOrderCollectionService>()
+                .AddSingleton<PriceCollectionService>()
+                .AddSingleton<PersonalOrderHistoryCollectionService>()
                 .BuildServiceProvider();
 
             await interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), Services);
@@ -79,6 +82,9 @@ namespace EveHypernetNotification
                 Services.GetService<HypernetCollectionService>()!.Start();
                 Services.GetService<TransactionCollectionService>()!.Start();
                 Services.GetService<RegionOrderCollectionService>()!.Start();
+                Services.GetService<PersonalOrderCollectionService>()!.Start();
+                Services.GetService<PriceCollectionService>()!.Start();
+                Services.GetService<PersonalOrderHistoryCollectionService>()!.Start();
             });
 
             app.Logger.LogInformation("{}", Services.GetService<EsiService>()!.GetAuthUrl());

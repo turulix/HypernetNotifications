@@ -14,6 +14,8 @@ public class MongoDbService
     public readonly IMongoCollection<JournalEntryDocument> JournalEntryCollection;
     public readonly IMongoCollection<RegionOrderDocument> RegionOrderCollection;
     public readonly IMongoCollection<MarketPriceDocument> MarketPriceCollection;
+    public readonly IMongoCollection<PersonalOrderDocument> PersonalOrderCollection;
+    public readonly IMongoCollection<PersonalOrderHistoryDocument> PersonalOrderHistoryCollection;
     public readonly IMongoDatabase Database;
 
 
@@ -27,7 +29,10 @@ public class MongoDbService
         JournalEntryCollection = Database.GetCollection<JournalEntryDocument>("JournalEntries");
         RegionOrderCollection = Database.GetCollection<RegionOrderDocument>("RegionOrders");
         MarketPriceCollection = Database.GetCollection<MarketPriceDocument>("MarketPrices");
+        PersonalOrderCollection = Database.GetCollection<PersonalOrderDocument>("PersonalOrders");
+        PersonalOrderHistoryCollection = Database.GetCollection<PersonalOrderHistoryDocument>("PersonalOrderHistory");
     }
+
 
     public async Task AddOrUpdateTokenAsync(OAuthTokensDocument tokenDocument)
     {

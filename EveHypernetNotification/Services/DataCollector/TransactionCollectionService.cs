@@ -19,7 +19,7 @@ public class TransactionCollectionService : TimedService
 
     protected override async Task OnTimerElapsed()
     {
-        App.Logger.LogInformation("Collecting wallet data");
+        App.Logger.LogInformation("Collecting Transactions Data");
         var tokens = await _dbService.GetAllUserTokensAsync();
         await tokens.ForEachAsync(async authToken => {
             var esiClient = await _esiService.GetClientAsync(authToken);
