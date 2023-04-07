@@ -12,7 +12,7 @@ public class PersonalOrderCollectionService : TimedService
     private readonly MongoDbService _dbService;
 
     // We only want to collect region order data once every hour, since it's a lot of data.
-    public PersonalOrderCollectionService(WebApplication app, EsiService esiService, MongoDbService dbService) : base(app, 10 * 1000)
+    public PersonalOrderCollectionService(WebApplication app, EsiService esiService, MongoDbService dbService) : base(app, 1200 * 1000)
     {
         _esiService = esiService;
         _dbService = dbService;
