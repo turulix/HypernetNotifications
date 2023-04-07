@@ -1,6 +1,7 @@
 ﻿using Discord;
 using Discord.Interactions;
 using Discord.WebSocket;
+using EveHypernetNotification.DatabaseDocuments;
 using EveHypernetNotification.Services;
 using JetBrains.Annotations;
 using MongoDB.Driver;
@@ -19,8 +20,8 @@ public class MessageClicked : InteractionModuleBase<SocketInteractionContext>
     [ComponentInteraction("loss:*")]
     public async Task LossButton(string raffleId)
     {
-        var auctions = await _db.AuctionCollection
-            .FindAsync(Builders<HyperNetAuction>.Filter.Eq(auction => auction.RaffleId, raffleId));
+        var auctions = await _db.HypernetAuctionCollection
+            .FindAsync(Builders<HypernetAuctionDocument>.Filter.Eq(auction => auction.RaffleId, raffleId));
 
         var auction = auctions.First();
 
@@ -28,8 +29,8 @@ public class MessageClicked : InteractionModuleBase<SocketInteractionContext>
             return;
 
         auction.Result = AuctionResult.Loss;
-        await _db.AuctionCollection.ReplaceOneAsync(
-            Builders<HyperNetAuction>.Filter.Eq(x => x.RaffleId, raffleId),
+        await _db.HypernetAuctionCollection.ReplaceOneAsync(
+            Builders<HypernetAuctionDocument>.Filter.Eq(x => x.RaffleId, raffleId),
             auction
         );
 
@@ -49,8 +50,8 @@ public class MessageClicked : InteractionModuleBase<SocketInteractionContext>
     [ComponentInteraction("won:*")]
     public async Task WonButton(string raffleId)
     {
-        var auctions = await _db.AuctionCollection
-            .FindAsync(Builders<HyperNetAuction>.Filter.Eq(auction => auction.RaffleId, raffleId));
+        var auctions = await _db.HypernetAuctionCollection
+            .FindAsync(Builders<HypernetAuctionDocument>.Filter.Eq(auction => auction.RaffleId, raffleId));
 
         var auction = auctions.First();
 
@@ -58,8 +59,8 @@ public class MessageClicked : InteractionModuleBase<SocketInteractionContext>
             return;
 
         auction.Result = AuctionResult.Won;
-        await _db.AuctionCollection.ReplaceOneAsync(
-            Builders<HyperNetAuction>.Filter.Eq(x => x.RaffleId, raffleId),
+        await _db.HypernetAuctionCollection.ReplaceOneAsync(
+            Builders<HypernetAuctionDocument>.Filter.Eq(x => x.RaffleId, raffleId),
             auction
         );
 

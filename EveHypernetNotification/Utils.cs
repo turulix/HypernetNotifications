@@ -2,6 +2,7 @@
 using Discord;
 using Discord.Webhook;
 using ESI.NET;
+using EveHypernetNotification.DatabaseDocuments;
 using EveHypernetNotification.Extensions;
 using Type = ESI.NET.Models.Universe.Type;
 
@@ -9,30 +10,30 @@ namespace EveHypernetNotification;
 
 public static class Utils
 {
-    public static string FormatBigNumber(float num)
+    public static string FormatBigNumber(decimal num)
     {
         return num == 0 ? "O" : num.ToString("##,##.##");
     }
 
-    public static float EstimateCoresNeeded(float minPrice, float maxPrice, float totalPrice)
+    public static decimal EstimateCoresNeeded(decimal minPrice, decimal maxPrice, decimal totalPrice)
     {
-        var coresNeeded = totalPrice * 0.05f / ((minPrice + maxPrice) / 2);
+        var coresNeeded = totalPrice * 0.05m / ((minPrice + maxPrice) / 2);
         if (coresNeeded < 1)
             coresNeeded = 1;
-        return (float)Math.Floor(coresNeeded);
+        return Math.Floor(coresNeeded);
     }
 
-    public static async Task<Embed> GetHypernetMessageEmbedAsync(HyperNetAuction auction, EsiClient client)
+    public static async Task<Embed> GetHypernetMessageEmbedAsync(HypernetAuctionDocument auctionDocument, EsiClient client)
     {
-        var itemType = await client.GetCachedType(auction.TypeId);
+        var itemType = await client.GetCachedType(auctionDocument.TypeId);
 
         return new EmbedBuilder()
-            .WithTitle($"Hypernet Auction {auction.Status}")
+            .WithTitle($"Hypernet Auction {auctionDocument.Status}")
             .WithDescription(
-                $"Hypernet Auction changed status to {auction.Status}"
+                $"Hypernet Auction changed status to {auctionDocument.Status}"
             )
             .WithThumbnailUrl($"https://images.evetech.net/types/{itemType.TypeId}/icon")
-            .WithColor(auction.Status switch
+            .WithColor(auctionDocument.Status switch
             {
                 HyperNetAuctionStatus.Created => Color.Blue,
                 HyperNetAuctionStatus.Finished => Color.Green,
@@ -40,46 +41,46 @@ public static class Utils
                 _ => Color.Default
             })
             .AddField("Item", itemType.Name, true)
-            .AddField("Marked Value (Sell)", FormatBigNumber(auction.ItemSellorderPrice), true)
-            .AddField("Marked Value (Buy)", FormatBigNumber(auction.ItemBuyorderPrice), true)
-            .AddField("Ticket Count", auction.TicketCount, true)
-            .AddField("Ticket Price", FormatBigNumber(auction.TicketPrice), true)
+            .AddField("Marked Value (Sell)", FormatBigNumber(auctionDocument.ItemSellorderPrice), true)
+            .AddField("Marked Value (Buy)", FormatBigNumber(auctionDocument.ItemBuyorderPrice), true)
+            .AddField("Ticket Count", auctionDocument.TicketCount, true)
+            .AddField("Ticket Price", FormatBigNumber(auctionDocument.TicketPrice), true)
             .AddField("Payout",
-                FormatBigNumber(auction.TotalPrice * 0.95f), true)
+                FormatBigNumber(auctionDocument.TotalPrice * 0.95m), true)
             .AddField("Estimated Profit (Win)",
-                FormatBigNumber(auction.TotalPrice / 2f -
-                                auction.TotalPrice * 0.05f -
+                FormatBigNumber(auctionDocument.TotalPrice / 2m -
+                                auctionDocument.TotalPrice * 0.05m -
                                 EstimateCoresNeeded(
-                                    auction.HypercoreBuyorderPrice,
-                                    auction.HypercoreSellorderPrice,
-                                    auction.TotalPrice
+                                    auctionDocument.HypercoreBuyorderPrice,
+                                    auctionDocument.HypercoreSellorderPrice,
+                                    auctionDocument.TotalPrice
                                 ) *
-                                auction.HypercoreSellorderPrice),
+                                auctionDocument.HypercoreSellorderPrice),
                 true
             )
             .AddField("Estimated Profit (Loss)",
-                FormatBigNumber(-auction.ItemSellorderPrice +
-                                auction.TotalPrice / 2f -
-                                auction.TotalPrice * 0.05f -
+                FormatBigNumber(-auctionDocument.ItemSellorderPrice +
+                                auctionDocument.TotalPrice / 2m -
+                                auctionDocument.TotalPrice * 0.05m -
                                 EstimateCoresNeeded(
-                                    auction.HypercoreBuyorderPrice,
-                                    auction.HypercoreSellorderPrice,
-                                    auction.TotalPrice
+                                    auctionDocument.HypercoreBuyorderPrice,
+                                    auctionDocument.HypercoreSellorderPrice,
+                                    auctionDocument.TotalPrice
                                 ) *
-                                auction.HypercoreSellorderPrice),
+                                auctionDocument.HypercoreSellorderPrice),
                 true
             )
-            .WithFooter($"RaffleID: {auction.RaffleId}")
+            .WithFooter($"RaffleID: {auctionDocument.RaffleId}")
             .Build();
     }
 
-    public static MessageComponent GetComponents(HyperNetAuction hyperNetAuction)
+    public static MessageComponent GetComponents(HypernetAuctionDocument hypernetAuctionDocument)
     {
-        if (hyperNetAuction.Status is HyperNetAuctionStatus.Created or HyperNetAuctionStatus.Expired)
+        if (hypernetAuctionDocument.Status is HyperNetAuctionStatus.Created or HyperNetAuctionStatus.Expired)
             return new ComponentBuilder().Build();
         return new ComponentBuilder()
-            .WithButton("Won Auction", $"won:{hyperNetAuction.RaffleId}", style: ButtonStyle.Success)
-            .WithButton("Lost Auction", $"loss:{hyperNetAuction.RaffleId}", style: ButtonStyle.Danger)
+            .WithButton("Won Auction", $"won:{hypernetAuctionDocument.RaffleId}", style: ButtonStyle.Success)
+            .WithButton("Lost Auction", $"loss:{hypernetAuctionDocument.RaffleId}", style: ButtonStyle.Danger)
             .Build();
     }
 

@@ -2,7 +2,7 @@
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 
-namespace EveHypernetNotification;
+namespace EveHypernetNotification.DatabaseDocuments;
 
 public enum HyperNetAuctionStatus
 {
@@ -18,47 +18,62 @@ public enum AuctionResult
 }
 
 [BsonIgnoreExtraElements]
-public class HyperNetAuction
+public class HypernetAuctionDocument
 {
     public long LocationId { get; set; }
     public long OwnerId { get; set; }
     public string RaffleId { get; set; }
     public int TicketCount { get; set; }
-    public float TicketPrice { get; set; }
+
+    [BsonRepresentation(BsonType.Decimal128)]
+    public decimal TicketPrice { get; set; }
+
     public int TypeId { get; set; }
 
     [BsonRepresentation(BsonType.String)]
     public HyperNetAuctionStatus Status { get; set; }
 
-    public float HypercoreBuyorderPrice { get; set; }
-    public float HypercoreSellorderPrice { get; set; }
+    [BsonRepresentation(BsonType.Decimal128)]
+    public decimal HypercoreBuyorderPrice { get; set; }
 
-    public float ItemBuyorderPrice { get; set; }
-    public float ItemSellorderPrice { get; set; }
-    public float TotalPrice => TicketCount * TicketPrice;
+    [BsonRepresentation(BsonType.Decimal128)]
+    public decimal HypercoreSellorderPrice { get; set; }
+
+    [BsonRepresentation(BsonType.Decimal128)]
+
+    public decimal ItemBuyorderPrice { get; set; }
+
+    [BsonRepresentation(BsonType.Decimal128)]
+    public decimal ItemSellorderPrice { get; set; }
+
+    public decimal TotalPrice => TicketCount * TicketPrice;
 
     [BsonRepresentation(BsonType.String)]
     public AuctionResult? Result { get; set; }
-    
+
     public DateTime FirstAppeared { get; set; } = DateTime.UtcNow;
 
-    public static HyperNetAuction FromDictionary(Dictionary<string, string> dictionary,
+    public long CharacterId { get; set; }
+
+    public static HypernetAuctionDocument FromDictionary(Dictionary<string, string> dictionary,
         HyperNetAuctionStatus status,
-        float coreBuyOrder,
-        float coreSellOrder
+        decimal coreBuyOrder,
+        decimal coreSellOrder,
+        long characterId
     )
     {
-        return new HyperNetAuction
+        return new HypernetAuctionDocument
         {
             LocationId = long.Parse(dictionary["location_id"]),
             OwnerId = long.Parse(dictionary["owner_id"]),
             RaffleId = dictionary["raffle_id"],
             TicketCount = int.Parse(dictionary["ticket_count"]),
-            TicketPrice = float.Parse(dictionary["ticket_price"], CultureInfo.InvariantCulture),
+            TicketPrice = decimal.Parse(dictionary["ticket_price"], CultureInfo.InvariantCulture),
             TypeId = int.Parse(dictionary["type_id"]),
             Status = status,
             HypercoreBuyorderPrice = coreBuyOrder,
-            HypercoreSellorderPrice = coreSellOrder
+            HypercoreSellorderPrice = coreSellOrder,
+            CharacterId = characterId
         };
     }
 }

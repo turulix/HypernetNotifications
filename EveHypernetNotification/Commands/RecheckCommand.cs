@@ -1,5 +1,6 @@
 ﻿using Discord.Interactions;
 using EveHypernetNotification.Services;
+using EveHypernetNotification.Services.DataCollector;
 using JetBrains.Annotations;
 
 namespace EveHypernetNotification.Commands;
@@ -7,11 +8,11 @@ namespace EveHypernetNotification.Commands;
 [UsedImplicitly]
 public class RecheckCommand : InteractionModuleBase<SocketInteractionContext>
 {
-    private readonly TimedUpdateService _timedUpdateService;
+    private readonly HypernetCollectionService _hypernetCollectionService;
 
-    public RecheckCommand(TimedUpdateService timedUpdateService)
+    public RecheckCommand(HypernetCollectionService hypernetCollectionService)
     {
-        _timedUpdateService = timedUpdateService;
+        _hypernetCollectionService = hypernetCollectionService;
     }
 
     [UsedImplicitly]
@@ -19,6 +20,6 @@ public class RecheckCommand : InteractionModuleBase<SocketInteractionContext>
     public async Task RecheckNow()
     {
         await Context.Interaction.RespondAsync("Rechecking now!", ephemeral: true);
-        await _timedUpdateService.CheckHypernetAuctions();
+        await _hypernetCollectionService.CheckHypernetAuctions();
     }
 }

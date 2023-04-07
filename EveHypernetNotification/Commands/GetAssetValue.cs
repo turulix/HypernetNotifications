@@ -1,7 +1,9 @@
 ﻿using Discord;
 using Discord.Interactions;
+using EveHypernetNotification.DatabaseDocuments;
 using EveHypernetNotification.Extensions;
 using EveHypernetNotification.Services;
+using EveHypernetNotification.Services.DataCollector;
 using JetBrains.Annotations;
 using MongoDB.Driver;
 
@@ -11,13 +13,13 @@ namespace EveHypernetNotification.Commands;
 [Group("assets", "Get asset values")]
 public class GetAssetValue : InteractionModuleBase<SocketInteractionContext>
 {
-    private readonly TimedUpdateService _timedUpdateService;
+    private readonly HypernetCollectionService _hypernetCollectionService;
     private readonly MongoDbService _db;
     private readonly EsiService _esiService;
 
-    public GetAssetValue(TimedUpdateService timedUpdateService, MongoDbService db, EsiService esiService)
+    public GetAssetValue(HypernetCollectionService hypernetCollectionService, MongoDbService db, EsiService esiService)
     {
-        _timedUpdateService = timedUpdateService;
+        _hypernetCollectionService = hypernetCollectionService;
         _db = db;
         _esiService = esiService;
     }
@@ -26,9 +28,9 @@ public class GetAssetValue : InteractionModuleBase<SocketInteractionContext>
     [SlashCommand("hypternet", "Get Total Value of Hypernet Auctions")]
     public async Task Hypernet()
     {
-        var runningAuctions = (await _db.AuctionCollection.FindAsync(auction => auction.Status == HyperNetAuctionStatus.Created)).ToList();
+        var runningAuctions = (await _db.HypernetAuctionCollection.FindAsync(auction => auction.Status == HyperNetAuctionStatus.Created)).ToList();
 
-        var pricePerItem = new Dictionary<int, float>();
+        var pricePerItem = new Dictionary<int, decimal>();
         var itemCount = new Dictionary<int, int>();
 
         foreach (var hyperNetAuction in runningAuctions)

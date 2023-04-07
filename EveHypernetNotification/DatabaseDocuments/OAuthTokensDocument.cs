@@ -3,7 +3,7 @@
 namespace EveHypernetNotification.DatabaseDocuments;
 
 [BsonIgnoreExtraElements]
-public class OAuthTokens
+public class OAuthTokensDocument
 {
     public long CharacterId { get; set; }
     public string AccessToken { get; set; }

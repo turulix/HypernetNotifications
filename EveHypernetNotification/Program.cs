@@ -8,6 +8,7 @@ using ESI.NET.Enumerations;
 using ESI.NET.Models.SSO;
 using EveHypernetNotification;
 using EveHypernetNotification.Services;
+using EveHypernetNotification.Services.DataCollector;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
 using MongoDB.Driver.Linq;
@@ -51,7 +52,9 @@ namespace EveHypernetNotification
                 .AddSingleton(discordClient)
                 .AddSingleton<MongoDbService>()
                 .AddSingleton<EsiService>()
-                .AddSingleton<TimedUpdateService>()
+                .AddSingleton<HypernetCollectionService>()
+                .AddSingleton<TransactionCollectionService>()
+                .AddSingleton<RegionOrderCollectionService>()
                 .BuildServiceProvider();
 
             await interactionService.AddModulesAsync(Assembly.GetEntryAssembly(), Services);
@@ -69,10 +72,13 @@ namespace EveHypernetNotification
                 await interactionService.RegisterCommandsToGuildAsync(1002206872096473138);
 #else
                 await interactionService.RegisterCommandsGloballyAsync();
+                await new InteractionService(discordClient).RegisterCommandsToGuildAsync(1002206872096473138);
 #endif
 
                 await discordClient.SetGameAsync("HyperNet Auctions");
-                Services.GetService<TimedUpdateService>()!.Start();
+                Services.GetService<HypernetCollectionService>()!.Start();
+                Services.GetService<TransactionCollectionService>()!.Start();
+                Services.GetService<RegionOrderCollectionService>()!.Start();
             });
 
             app.Logger.LogInformation("{}", Services.GetService<EsiService>()!.GetAuthUrl());

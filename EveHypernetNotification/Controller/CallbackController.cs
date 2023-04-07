@@ -25,7 +25,7 @@ public class CallbackController : Microsoft.AspNetCore.Mvc.Controller
 
         var auth = await _esiClient.Verify(sso);
 
-        var token = new OAuthTokens
+        var token = new OAuthTokensDocument
         {
             CharacterId = auth.CharacterID,
             AccessToken = sso.AccessToken,

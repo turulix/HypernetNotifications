@@ -1,16 +1,14 @@
-﻿using System.Timers;
-using Discord.WebSocket;
+﻿using Discord.WebSocket;
 using ESI.NET;
-using ESI.NET.Enumerations;
 using ESI.NET.Models.Character;
 using EveHypernetNotification.DatabaseDocuments;
 using EveHypernetNotification.Extensions;
 using MongoDB.Driver;
 using Timer = System.Timers.Timer;
 
-namespace EveHypernetNotification.Services;
+namespace EveHypernetNotification.Services.DataCollector;
 
-public class TimedUpdateService
+public class HypernetCollectionService
 {
     private readonly EsiService _esiClient;
     private readonly MongoDbService _db;
@@ -23,7 +21,7 @@ public class TimedUpdateService
         Interval = 5 * 60 * 1000
     };
 
-    public TimedUpdateService(EsiService esiClient, MongoDbService db, WebApplication app, DiscordSocketClient discord)
+    public HypernetCollectionService(EsiService esiClient, MongoDbService db, WebApplication app, DiscordSocketClient discord)
     {
         _esiClient = esiClient;
         _db = db;
@@ -42,7 +40,7 @@ public class TimedUpdateService
     {
         try
         {
-            var tokens = await _db.TokensCollection.FindAsync(FilterDefinition<OAuthTokens>.Empty);
+            var tokens = await _db.TokensCollection.FindAsync(FilterDefinition<OAuthTokensDocument>.Empty);
             await tokens.ForEachAsync(async authTokens => {
                 _app.Logger.LogInformation(
                     "Checking hypernet auctions for {AuthTokensCharacterName}", authTokens.CharacterName
@@ -56,15 +54,15 @@ public class TimedUpdateService
 
                 var notifications = await authedClient.Character.Notifications();
 
-                var rafflesCreated = GetCreatedRaffles(notifications.Data, coreBuyOrderPrice, coreSellOrderPrice);
-                var rafflesFinished = GetFinishedRaffles(notifications.Data, coreBuyOrderPrice, coreSellOrderPrice);
-                var rafflesExpired = GetExpiredRaffles(notifications.Data, coreBuyOrderPrice, coreSellOrderPrice);
+                var rafflesCreated = GetCreatedRaffles(notifications.Data, coreBuyOrderPrice, coreSellOrderPrice, authTokens.CharacterId);
+                var rafflesFinished = GetFinishedRaffles(notifications.Data, coreBuyOrderPrice, coreSellOrderPrice, authTokens.CharacterId);
+                var rafflesExpired = GetExpiredRaffles(notifications.Data, coreBuyOrderPrice, coreSellOrderPrice, authTokens.CharacterId);
 
                 var runningAuctions = rafflesCreated
                     .ExceptByProperty(rafflesFinished, auction => auction.RaffleId)
                     .ExceptByProperty(rafflesExpired, auction => auction.RaffleId);
 
-                var databaseDocuments = (await _db.AuctionCollection.FindAsync(auction =>
+                var databaseDocuments = (await _db.HypernetAuctionCollection.FindAsync(auction =>
                     runningAuctions.Select(netAuction => netAuction.RaffleId).Contains(auction.RaffleId)
                 )).ToList();
 
@@ -90,11 +88,11 @@ public class TimedUpdateService
                     }
 
                     _app.Logger.LogInformation("Inserted {} new auctions", newAuctions.Count);
-                    await _db.AuctionCollection.InsertManyAsync(newAuctions);
+                    await _db.HypernetAuctionCollection.InsertManyAsync(newAuctions);
                 }
 
-                var openAuctions = (await _db.AuctionCollection.FindAsync(auction => auction.Status == HyperNetAuctionStatus.Created)).ToList();
-                var changedAuctions = new List<HyperNetAuction>();
+                var openAuctions = (await _db.HypernetAuctionCollection.FindAsync(auction => auction.Status == HyperNetAuctionStatus.Created)).ToList();
+                var changedAuctions = new List<HypernetAuctionDocument>();
                 foreach (var hyperNetAuction in openAuctions)
                 {
                     var changed = false;
@@ -113,7 +111,7 @@ public class TimedUpdateService
                         continue;
 
                     changedAuctions.Add(hyperNetAuction);
-                    await _db.AuctionCollection.ReplaceOneAsync(
+                    await _db.HypernetAuctionCollection.ReplaceOneAsync(
                         auction => auction.RaffleId == hyperNetAuction.RaffleId, hyperNetAuction
                     );
                 }
@@ -131,34 +129,35 @@ public class TimedUpdateService
         }
     }
 
-    private async Task SendMessage(OAuthTokens authTokens, HyperNetAuction hyperNetAuction, EsiClient authedClient)
+    private async Task SendMessage(OAuthTokensDocument authTokensDocument, HypernetAuctionDocument hypernetAuctionDocument, EsiClient authedClient)
     {
-        if (_discord.GetGuild(authTokens.GuildId) == null)
+        if (_discord.GetGuild(authTokensDocument.GuildId) == null)
         {
-            var guild = await _discord.Rest.GetGuildAsync(authTokens.GuildId);
-            var textChannel = await guild.GetTextChannelAsync(authTokens.ChannelId);
+            var guild = await _discord.Rest.GetGuildAsync(authTokensDocument.GuildId);
+            var textChannel = await guild.GetTextChannelAsync(authTokensDocument.ChannelId);
             await textChannel.SendMessageAsync(
-                embed: await Utils.GetHypernetMessageEmbedAsync(hyperNetAuction, authedClient),
-                components: Utils.GetComponents(hyperNetAuction)
+                embed: await Utils.GetHypernetMessageEmbedAsync(hypernetAuctionDocument, authedClient),
+                components: Utils.GetComponents(hypernetAuctionDocument)
             );
         }
         else
         {
-            var guild = _discord.GetGuild(authTokens.GuildId);
-            var textChannel = guild.GetTextChannel(authTokens.ChannelId);
+            var guild = _discord.GetGuild(authTokensDocument.GuildId);
+            var textChannel = guild.GetTextChannel(authTokensDocument.ChannelId);
             await textChannel.SendMessageAsync(
-                embed: await Utils.GetHypernetMessageEmbedAsync(hyperNetAuction, authedClient),
-                components: Utils.GetComponents(hyperNetAuction)
+                embed: await Utils.GetHypernetMessageEmbedAsync(hypernetAuctionDocument, authedClient),
+                components: Utils.GetComponents(hypernetAuctionDocument)
             );
         }
     }
 
     #region Raffle Parsing
 
-    private List<HyperNetAuction> GetCreatedRaffles(
+    private List<HypernetAuctionDocument> GetCreatedRaffles(
         IEnumerable<Notification> notificationsData,
-        float coreBuyOrderPrice,
-        float coreSellOrderPrice
+        decimal coreBuyOrderPrice,
+        decimal coreSellOrderPrice,
+        long characterId
     )
     {
         return notificationsData
@@ -167,16 +166,17 @@ public class TimedUpdateService
             .Select(strings =>
                 strings.Select(s => s.Split(": ", 2))
                     .ToDictionary(strings1 => strings1[0], strings1 => strings1[1])
-            ).Select(dictionary => HyperNetAuction.FromDictionary(dictionary,
+            ).Select(dictionary => HypernetAuctionDocument.FromDictionary(dictionary,
                 HyperNetAuctionStatus.Created,
-                coreBuyOrderPrice, coreSellOrderPrice))
+                coreBuyOrderPrice, coreSellOrderPrice, characterId))
             .ToList();
     }
 
-    private List<HyperNetAuction> GetFinishedRaffles(
+    private List<HypernetAuctionDocument> GetFinishedRaffles(
         IEnumerable<Notification> notificationsData,
-        float coreBuyOrderPrice,
-        float coreSellOrderPrice
+        decimal coreBuyOrderPrice,
+        decimal coreSellOrderPrice,
+        long characterId
     )
     {
         return notificationsData
@@ -185,16 +185,17 @@ public class TimedUpdateService
             .Select(strings =>
                 strings.Select(s => s.Split(": ", 2))
                     .ToDictionary(strings1 => strings1[0], strings1 => strings1[1])
-            ).Select(dictionary => HyperNetAuction.FromDictionary(dictionary,
+            ).Select(dictionary => HypernetAuctionDocument.FromDictionary(dictionary,
                 HyperNetAuctionStatus.Finished,
-                coreBuyOrderPrice, coreSellOrderPrice))
+                coreBuyOrderPrice, coreSellOrderPrice, characterId))
             .ToList();
     }
 
-    private List<HyperNetAuction> GetExpiredRaffles(
+    private List<HypernetAuctionDocument> GetExpiredRaffles(
         IEnumerable<Notification> notificationsData,
-        float coreBuyOrderPrice,
-        float coreSellOrderPrice
+        decimal coreBuyOrderPrice,
+        decimal coreSellOrderPrice,
+        long characterId
     )
     {
         return notificationsData
@@ -203,9 +204,9 @@ public class TimedUpdateService
             .Select(strings =>
                 strings.Select(s => s.Split(": ", 2))
                     .ToDictionary(strings1 => strings1[0], strings1 => strings1[1])
-            ).Select(dictionary => HyperNetAuction.FromDictionary(dictionary,
+            ).Select(dictionary => HypernetAuctionDocument.FromDictionary(dictionary,
                 HyperNetAuctionStatus.Expired,
-                coreBuyOrderPrice, coreSellOrderPrice))
+                coreBuyOrderPrice, coreSellOrderPrice, characterId))
             .ToList();
     }
 
