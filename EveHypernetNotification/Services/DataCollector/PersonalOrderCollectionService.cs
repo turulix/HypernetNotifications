@@ -12,7 +12,7 @@ public class PersonalOrderCollectionService : TimedService
     private readonly MongoDbService _dbService;
 
     // We only want to collect region order data once every hour, since it's a lot of data.
-    public PersonalOrderCollectionService(WebApplication app, EsiService esiService, MongoDbService dbService) : base(app, 1200 * 1000)
+    public PersonalOrderCollectionService(WebApplication app, EsiService esiService, MongoDbService dbService) : base(app, 10 * 1000)
     {
         _esiService = esiService;
         _dbService = dbService;
@@ -29,6 +29,7 @@ public class PersonalOrderCollectionService : TimedService
             {
                 if (orders.Data.Count > 0)
                 {
+                    var activeOrders = orders.Data.Select(order => order.OrderId).ToList();
                     var documents = orders.Data.Select(order => new PersonalOrderDocument(order, token.CharacterId));
                     var writes = documents.Select(document => {
                         var writeModel = new UpdateManyModel<PersonalOrderDocument>(
@@ -44,6 +45,8 @@ public class PersonalOrderCollectionService : TimedService
                                 .SetOnInsert(orderDocument => orderDocument.VolumeTotal, document.VolumeTotal)
                                 .SetOnInsert(orderDocument => orderDocument.Issued, document.Issued)
                                 .SetOnInsert(orderDocument => orderDocument.Range, document.Range)
+                                .SetOnInsert(orderDocument => orderDocument.CharacterId, document.CharacterId)
+                                .SetOnInsert(orderDocument => orderDocument.IsActive, true)
                                 .SetOnInsert(orderDocument => orderDocument.IsCorporation, document.IsCorporation)
                                 .Push(orderDocument => orderDocument.OrderDetails, document.OrderDetails.Last())
                         )
@@ -53,6 +56,17 @@ public class PersonalOrderCollectionService : TimedService
                         return writeModel;
                     });
                     await _dbService.PersonalOrderCollection.BulkWriteAsync(writes);
+
+                    // Deactivate orders that are no longer active
+                    var filter = Builders<PersonalOrderDocument>.Filter.Eq(document => document.IsActive, true);
+                    filter &= Builders<PersonalOrderDocument>.Filter.Eq(document => document.CharacterId, token.CharacterId);
+                    filter &= Builders<PersonalOrderDocument>.Filter.Nin(document => document.OrderId, activeOrders);
+
+                    var update = Builders<PersonalOrderDocument>.Update.Set(orderDocument => orderDocument.IsActive, false);
+
+
+                    await _dbService.PersonalOrderCollection.UpdateManyAsync(filter, update);
+                    activeOrders.Clear();
                 }
             }
         });

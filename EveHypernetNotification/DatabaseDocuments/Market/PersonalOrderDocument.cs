@@ -35,6 +35,8 @@ public class PersonalOrderDocument
 
     public long CharacterId { get; set; }
 
+    public bool IsActive { get; set; }
+
     public PersonalOrderDocument(Order order, long characterId)
     {
         CharacterId = characterId;
@@ -49,6 +51,7 @@ public class PersonalOrderDocument
         RegionId = order.RegionId;
         TypeId = order.TypeId;
         VolumeTotal = order.VolumeTotal;
+        IsActive = true;
         OrderDetails = new List<PersonalOrderDetails>
         {
             new()

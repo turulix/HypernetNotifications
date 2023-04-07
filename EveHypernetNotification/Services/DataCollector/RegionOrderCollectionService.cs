@@ -25,6 +25,7 @@ public class RegionOrderCollectionService : TimedService
         var regions = await esi.Universe.Regions();
         var fetchTime = DateTime.UtcNow;
         var insertTasks = new List<Task>();
+        var activeOrderIds = new List<long>();
         if (regions.StatusCode == HttpStatusCode.OK)
         {
             foreach (var regionId in regions.Data)
@@ -38,6 +39,7 @@ public class RegionOrderCollectionService : TimedService
                     {
                         if (orders.Data.Count > 0)
                         {
+                            activeOrderIds.AddRange(orders.Data.Select(order => order.OrderId));
                             var documents = orders.Data.Select(order => new RegionOrderDocument(order, regionId, fetchTime));
                             var writes = documents.Select(document => {
                                 var writeModel = new UpdateManyModel<RegionOrderDocument>(
@@ -54,6 +56,7 @@ public class RegionOrderCollectionService : TimedService
                                         .SetOnInsert(orderDocument => orderDocument.VolumeTotal, document.VolumeTotal)
                                         .SetOnInsert(orderDocument => orderDocument.Issued, document.Issued)
                                         .SetOnInsert(orderDocument => orderDocument.Range, document.Range)
+                                        .SetOnInsert(orderDocument => orderDocument.IsActive, true)
                                         .Push(orderDocument => orderDocument.OrderDetails, document.OrderDetails.Last())
                                 )
                                 {
@@ -72,8 +75,18 @@ public class RegionOrderCollectionService : TimedService
             }
         }
 
+
         await Task.WhenAll(insertTasks);
+
+        // Deactivate orders that are no longer active
+        var filter = Builders<RegionOrderDocument>.Filter.Eq(document => document.IsActive, true);
+        filter &= Builders<RegionOrderDocument>.Filter.Nin(document => document.OrderId, activeOrderIds);
+
+        var update = Builders<RegionOrderDocument>.Update.Set(document => document.IsActive, false);
+        await _dbService.RegionOrderCollection.UpdateManyAsync(filter, update);
+
         insertTasks.Clear();
+        activeOrderIds.Clear();
         App.Logger.LogInformation("Finished collecting region order data, took {time}s", (DateTime.UtcNow - fetchTime).TotalSeconds);
     }
 }

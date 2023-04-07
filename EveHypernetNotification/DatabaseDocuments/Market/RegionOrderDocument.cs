@@ -42,6 +42,8 @@ public class RegionOrderDocument
 
     public List<RegionalOrderDetails> OrderDetails { get; set; }
 
+    public bool IsActive { get; set; }
+
 
     public RegionOrderDocument(Order order, int regionId, DateTime fetchDate)
     {
@@ -56,6 +58,7 @@ public class RegionOrderDocument
         SystemId = order.SystemId;
         TypeId = order.TypeId;
         VolumeTotal = order.VolumeTotal;
+        IsActive = true;
         OrderDetails = new List<RegionalOrderDetails>
         {
             new()
