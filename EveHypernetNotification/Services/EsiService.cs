@@ -1,7 +1,9 @@
-﻿using ESI.NET;
+﻿using System.Net;
+using ESI.NET;
 using ESI.NET.Enumerations;
 using ESI.NET.Models.SSO;
 using EveHypernetNotification.DatabaseDocuments;
+using EveHypernetNotification.Utilities;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;
 using Type = ESI.NET.Models.Universe.Type;
@@ -14,6 +16,7 @@ public class EsiService
     private readonly MongoDbService _dbService;
     private readonly IOptions<EsiConfig> _config;
     private readonly EsiClient _esiClient;
+    private readonly TimedCache<int, Type> _typeCache = new();
 
     public EsiService(WebApplication app, MongoDbService dbService)
     {
@@ -169,5 +172,20 @@ public class EsiService
         var client = new EsiClient(_config);
         client.SetCharacterData(authData);
         return client;
+    }
+
+    public async Task<Type?> GetTypeDetailsAsync(int typeId)
+    {
+        if (_typeCache.TryGetValue(typeId, out var type))
+        {
+            return type;
+        }
+
+        var response = await GetClient().Universe.Type(typeId);
+        if (response.StatusCode != HttpStatusCode.OK)
+            return null;
+
+        _typeCache.Set(typeId, response.Data, response.Expires ?? DateTime.UtcNow.AddHours(12));
+        return response.Data;
     }
 }

@@ -4,6 +4,7 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace EveHypernetNotification.DatabaseDocuments.Market;
 
+[BsonIgnoreExtraElements]
 public class PersonalOrderDetails
 {
 
@@ -18,6 +19,7 @@ public class PersonalOrderDetails
     public DateTime UpdateDate { get; set; }
 }
 
+[BsonIgnoreExtraElements]
 public class PersonalOrderDocument
 {
     public int Duration { get; set; }
