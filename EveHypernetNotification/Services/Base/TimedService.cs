@@ -17,10 +17,11 @@ public abstract class TimedService
         Timer.Elapsed += OnTimedEvent;
         Timer.AutoReset = true;
     }
-    
+
     public void Start()
     {
         Timer.Start();
+        OnTimerElapsed();
     }
 
     private void OnTimedEvent(object? sender, ElapsedEventArgs e)
