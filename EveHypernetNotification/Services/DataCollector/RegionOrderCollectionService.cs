@@ -66,6 +66,8 @@ public class RegionOrderCollectionService : TimedService
         {
             IsOrdered = false
         });
+        
+        updates.Clear();
 
         App.Logger.LogInformation("Finished downloading region order data, took {Time}s | Total Orders: {}",
             (DateTime.UtcNow - fetchTime).TotalSeconds,
