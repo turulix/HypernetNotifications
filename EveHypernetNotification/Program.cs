@@ -82,7 +82,7 @@ namespace EveHypernetNotification
                 Services.GetService<HypernetCollectionService>()!.Start();
                 Services.GetService<TransactionCollectionService>()!.Start();
                 // Disabled for now.
-                //Services.GetService<RegionOrderCollectionService>()!.Start();
+                Services.GetService<RegionOrderCollectionService>()!.Start();
                 Services.GetService<PersonalOrderCollectionService>()!.Start();
                 Services.GetService<PriceCollectionService>()!.Start();
                 Services.GetService<PersonalOrderHistoryCollectionService>()!.Start();
